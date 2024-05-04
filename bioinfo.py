@@ -29,7 +29,7 @@ def main():
         analyze_protein_sequence(sequence_input)
 
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/v1/uniprotkb/{uniprot_id}.xml"
+    url = f"http://rest.uniprot.org/uniprotkb/query=id:P33993&amp;columns=sequence&amp;format=tab"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.text
