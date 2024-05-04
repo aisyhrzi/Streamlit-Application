@@ -28,19 +28,15 @@ def main():
     if sequence_button and sequence_input:
         analyze_protein_sequence(sequence_input)
 
-def fetch_protein_data(uniprot_id):
-    url = f"http://rest.uniprot.org/uniprotkb/query=id:P33993&amp;columns=sequence&amp;format=tab"
+def fetch_protein_sequence(uniprot_id):
+    url = f"https://rest.uniprot.org/uniprotkb/search?query=accession:{uniprot_id}&fields=sequence&format=tab"
     response = requests.get(url)
     if response.status_code == 200:
-        data = response.text
-        # Parsing XML data to retrieve specific information
-        # Placeholder for real parsing logic
-        return {
-            "description": "Human TP53 tumor protein",
-            "sequence": "MVMEESQTSDQSKE"
-        }
+        # Assuming the response content is text and the first line is a header
+        sequence_data = response.text.split('\n')[1].strip()
+        return sequence_data
     else:
-        st.error("Failed to retrieve data.")
+        print("Failed to retrieve data:", response.status_code)
         return None
 
 def display_protein_info(data):
