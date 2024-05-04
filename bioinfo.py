@@ -1,59 +1,74 @@
 import streamlit as st
 import requests
-import json
+import networkx as nx
+import matplotlib.pyplot as plt
+from Bio.SeqUtils import molecular_weight
+from Bio import pairwise2
+from Bio.Seq import Seq
+
+# Streamlit Page Config
+st.set_page_config(page_title="Protein Data Analysis", layout="wide")
 
 def main():
     st.title("Protein Data Analysis App")
-    
-    # Input for UniProt ID
     protein_id = st.sidebar.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
+
     analyze_button = st.sidebar.button("Analyze Protein")
-    
+
     if analyze_button:
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
             display_protein_info(protein_data)
-    
-    # Additional feature: Protein sequence analysis
+            display_ppi_network(protein_id)
+
     st.sidebar.subheader("Protein Sequence Analysis")
     sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
     sequence_button = st.sidebar.button("Analyze Sequence")
-    
+
     if sequence_button and sequence_input:
         analyze_protein_sequence(sequence_input)
 
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.json"
-    try:
-        response = requests.get(url)
-        response.raise_for_status()  # Will raise an exception for HTTP codes 400 or 500
-        data = response.json()
-        return data
-    except requests.exceptions.HTTPError as errh:
-        st.error(f"HTTP Error: {errh.response.status_code} - {errh.response.text}")
-    except requests.exceptions.ConnectionError as errc:
-        st.error(f"Error Connecting: {errc}")
-    except requests.exceptions.Timeout as errt:
-        st.error(f"Timeout Error: {errt}")
-    except requests.exceptions.RequestException as err:
-        st.error(f"Unexpected Error: {err}")
-    return None
+    url = f"https://rest.uniprot.org/uniprotkb/v1/uniprotkb/{uniprot_id}.xml"
+    response = requests.get(url)
+    if response.status_code == 200:
+        data = response.text
+        # Parsing XML data to retrieve specific information
+        # Placeholder for real parsing logic
+        return {
+            "description": "Human TP53 tumor protein",
+            "sequence": "MVMEESQTSDQSKE"
+        }
+    else:
+        st.error("Failed to retrieve data.")
+        return None
 
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
-    if "entry" in data and "protein" in data["entry"] and "recommendedName" in data["entry"]["protein"] and "fullName" in data["entry"]["protein"]["recommendedName"]:
-        description = data["entry"]["protein"]["recommendedName"]["fullName"]["value"]
-        st.write("Description:", description)
-    if "sequence" in data["entry"]:
-        sequence = data["entry"]["sequence"]["sequence"]
-        st.write("Protein Length:", len(sequence))
-    else:
-        st.error("Protein data is incomplete or missing. Check API response format.")
+    st.write("Description:", data["description"])
+    st.write("Protein Length:", len(data["sequence"]))
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(data["sequence"], seq_type='protein')))
+
+def display_ppi_network(uniprot_id):
+    st.subheader("Protein-Protein Interaction Network")
+    G = nx.Graph()
+    G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
+    G.add_edge("Protein1", "Protein3")
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(8, 8))
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
+    st.pyplot(plt)
 
 def analyze_protein_sequence(sequence):
-    # Placeholder for sequence analysis logic
-    st.write("Sequence provided:", sequence)
-    # Implement actual analysis here
+    seq = Seq(sequence)
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
+    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
+
+def align_sequences(seq1, seq2):
+    alignments = pairwise2.align.globalxx(seq1, seq2)
+    alignment_text = pairwise2.format_alignment(*alignments[0])
+    st.text("Alignment:")
+    st.text(alignment_text)
 
 if __name__ == "__main__":
     main()
