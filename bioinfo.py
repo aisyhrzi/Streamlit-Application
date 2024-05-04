@@ -28,20 +28,27 @@ def main():
     if sequence_button and sequence_input:
         analyze_protein_sequence(sequence_input)
 
+import requests
+
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/v1/uniprotkb/{uniprot_id}.xml"
-    response = requests.get(url)
-    if response.status_code == 200:
-        data = response.text
-        # Parsing XML data to retrieve specific information
-        # Placeholder for real parsing logic
-        return {
-            "description": "Human TP53 tumor protein",
-            "sequence": "MVMEESQTSDQSKE"
-        }
-    else:
-        st.error("Failed to retrieve data.")
-        return None
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.json"
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # This will raise an error for bad responses
+        return response.json()
+    except requests.exceptions.HTTPError as e:
+        print(f"HTTP Error: {e.response.status_code} {e.response.text}")
+    except requests.exceptions.RequestException as e:
+        print(f"Request Failed: {e}")
+    return None
+
+# Test the function
+protein_data = fetch_protein_data("P33993")
+if protein_data:
+    print("Protein data retrieved successfully.")
+else:
+    print("Failed to retrieve protein data.")
+
 
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
