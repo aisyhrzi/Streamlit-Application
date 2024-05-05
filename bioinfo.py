@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
 from Bio.Seq import Seq
+from xml.etree import ElementTree as ET
 
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
@@ -29,15 +30,16 @@ def main():
         analyze_protein_sequence(sequence_input)
 
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/v1/uniprotkb/{uniprot_id}.xml"
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
     if response.status_code == 200:
-        data = response.text
+        root = ET.fromstring(response.content)
         # Parsing XML data to retrieve specific information
-        # Placeholder for real parsing logic
+        description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
+        sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
         return {
-            "description": "Human TP53 tumor protein",
-            "sequence": "MVMEESQTSDQSKE"
+            "description": description,
+            "sequence": sequence
         }
     else:
         st.error("Failed to retrieve data.")
@@ -51,13 +53,15 @@ def display_protein_info(data):
 
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
+    # Replace placeholder edges with real PPI data if available
     G = nx.Graph()
     G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
     G.add_edge("Protein1", "Protein3")
     pos = nx.spring_layout(G)
     plt.figure(figsize=(8, 8))
     nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
-    st.pyplot(plt)
+    st.pyplot(plt.gcf())
+    plt.clf()
 
 def analyze_protein_sequence(sequence):
     seq = Seq(sequence)
