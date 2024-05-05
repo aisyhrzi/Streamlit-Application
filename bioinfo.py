@@ -31,7 +31,28 @@ def main():
     if sequence_button and sequence_input:
         show_progress_bar()
         analyze_protein_sequence(sequence_input)
+      # Button to trigger download preparation
+    if st.sidebar.button("Fetch and Prepare Download"):
+        show_progress_bar()  # Show progress before fetching
+        fasta_data = fetch_fasta(uniprot_id)
 
+        if fasta_data:
+            # Download button for FASTA
+            st.download_button(
+                label="Download FASTA",
+                data=fasta_data,
+                file_name=f"{uniprot_id}.fasta",
+                mime="text/plain"
+            )
+        else:
+            st.error("Failed to retrieve the protein sequence.")
+def fetch_fasta(uniprot_id):
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.fasta"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text.encode('utf-8')  # Encode as bytes for download
+    else:
+        return None
 
 def show_progress_bar():
     progress_text = "Operation in progress. Please wait."
