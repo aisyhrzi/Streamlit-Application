@@ -33,8 +33,7 @@ def main():
         analyze_protein_sequence(sequence_input)
 
     # Button to trigger download preparation
-    if st.sidebar.button("Fetch and Prepare Download"):
-        show_progress_bar()  # Show progress before fetching
+   # if st.sidebar.button("Fetch and Prepare Download"):
         fasta_data = fetch_fasta(protein_id)
 
         if fasta_data:
