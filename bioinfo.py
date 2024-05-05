@@ -32,7 +32,6 @@ def main():
         show_progress_bar()
         analyze_protein_sequence(sequence_input)
 
-    st.button("Rerun")
 
 def show_progress_bar():
     progress_text = "Operation in progress. Please wait."
