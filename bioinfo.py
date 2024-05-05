@@ -6,6 +6,7 @@ from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
 from Bio.Seq import Seq
 from xml.etree import ElementTree as ET
+import time
 
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
@@ -17,6 +18,7 @@ def main():
     analyze_button = st.sidebar.button("Analyze Protein")
 
     if analyze_button:
+        show_progress_bar()
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
             display_protein_info(protein_data)
@@ -27,14 +29,27 @@ def main():
     sequence_button = st.sidebar.button("Analyze Sequence")
 
     if sequence_button and sequence_input:
+        show_progress_bar()
         analyze_protein_sequence(sequence_input)
+
+    st.button("Rerun")
+
+def show_progress_bar():
+    progress_text = "Operation in progress. Please wait."
+    my_bar = st.progress(0, text=progress_text)
+
+    for percent_complete in range(100):
+        time.sleep(0.01)  # Simulates progress
+        my_bar.progress(percent_complete + 1, text=progress_text)
+
+    time.sleep(1)  # Pause for a moment after completion
+    my_bar.empty()
 
 def fetch_protein_data(uniprot_id):
     url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
     if response.status_code == 200:
         root = ET.fromstring(response.content)
-        # Parsing XML data to retrieve specific information
         description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
         sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
         return {
@@ -53,7 +68,6 @@ def display_protein_info(data):
 
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
-    # Replace placeholder edges with real PPI data if available
     G = nx.Graph()
     G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
     G.add_edge("Protein1", "Protein3")
