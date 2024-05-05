@@ -1,7 +1,5 @@
 # 🌟 Protein Data Analysis App 🌟
 
-![Protein Data Analysis Banner](https://example.com/banner-image.png) <!-- Replace with your banner image URL -->
-
 ## Overview
 Welcome to the **Protein Data Analysis App**! This is a Streamlit-based web application that provides a friendly way to analyze protein data using UniProt IDs and protein sequences.
 
