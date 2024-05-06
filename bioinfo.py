@@ -14,6 +14,7 @@ global_fasta_sequence = ""
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
 
+
 def main():
     st.title("Protein Data Analysis App")
     protein_id = st.sidebar.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
@@ -46,6 +47,7 @@ def main():
             mime="text/plain"
         )
 
+
 # Function to fetch the protein sequence in FASTA format
 @st.cache_data
 def fetch_fasta(uniprot_id):
@@ -57,17 +59,18 @@ def fetch_fasta(uniprot_id):
         st.error("Failed to retrieve the protein sequence.")
         return None
 
+
 # Function to simulate a progress bar
 def show_progress_bar():
     progress_text = "Operation in progress. Please wait."
     my_bar = st.progress(0, text=progress_text)
 
-       for percent_complete in range(100):
+    for percent_complete in range(100):
         time.sleep(0.01)  # Simulates progress
         my_bar.progress(percent_complete + 1, text=progress_text)
 
-        time.sleep(1)  # Pause for a moment after completion
-        my_bar.empty()
+    time.sleep(1)  # Pause for a moment after completion
+    my_bar.empty()
 
 
 # Function to fetch protein data and parse XML
@@ -103,7 +106,7 @@ def display_ppi_network(uniprot_id):
     G.add_edge("Protein1", "Protein3")
     pos = nx.spring_layout(G)
     plt.figure(figsize=(8, 8))
-    nx.draw(G, pos, with labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
     st.pyplot(plt.gcf())
     plt.clf()
 
@@ -132,4 +135,3 @@ def align_sequences(fasta_seq, input_seq):
 
 if __name__ == "__main__":
     main()
-
