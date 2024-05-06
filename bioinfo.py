@@ -1,127 +1,138 @@
 import streamlit as st
 import requests
-import matplotlib.pyplot as plt
 import networkx as nx
+import matplotlib.pyplot as plt
+from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
-from Bio.pairwise2 import format_alignment
+from Bio.Seq import Seq
+from xml.etree import ElementTree as ET
+import time
 
-# Function to retrieve protein data from UniProt
-def get_protein_data(uniprot_id):
-    url = f"https://www.uniprot.org/uniprot/{uniprot_id}.txt"
-    response = requests.get(url)
-    protein_data = {"ID": uniprot_id}  # Initialize with the UniProt ID
-    for line in response.iter_lines():
-        line = line.decode("utf-8")
-        if line.startswith("ID"):
-            fields = line.split()
-            if len(fields) >= 2:
-                protein_data["Name"] = ' '.join(fields[1:])
-            else:
-                protein_data["Name"] = "Not available"
-        elif line.startswith("SQ"):
-            weight_line = next(response.iter_lines()).decode("utf-8")
-            weight = weight_line.split()[-1]
-            protein_data["Weight"] = weight
-        elif line.startswith("DE   RecName: Full="):
-            function = line.split("Full=")[1].split(";")[0]
-            protein_data["Function"] = function
-        elif line.startswith("DR   SUPFAM"):
-            structure = line.split(";")[1]
-            protein_data["Structure"] = structure
-        elif line.startswith("FT   MOD_RES"):
-            length = int(line.split()[2])
-            protein_data["Length"] = length
-        elif line.startswith("CC   -!- SUBCELLULAR LOCATION:"):
-            subcellular_location = line.split("CC   -!- SUBCELLULAR LOCATION:")[1].strip()
-            protein_data["Subcellular Location"] = subcellular_location
-        elif line.startswith("FT   MOD_RES"):
-            ptms = line.split(";")[1:]
-            protein_data["PTMs"] = [ptm.strip() for ptm in ptms]
-        elif line.startswith("DR   Reactome"):
-            pathway = line.split(";")[1]
-            protein_data["Pathway"] = pathway
-        elif line.startswith("DR   MIM"):
-            disease = line.split(";")[1]
-            protein_data["Disease"] = disease
-    return protein_data
+# Streamlit Page Config
+st.set_page_config(page_title="Enhanced Protein Data Analysis", layout="wide")
 
-# Function to display protein characteristics
-def display_protein_characteristics(protein_data):
-    st.subheader("Protein Characteristics")
-    st.write(f"UniProt ID: {protein_data['ID']}")
-    st.write(f"Name: {protein_data['Name']}")
-    if 'Length' in protein_data:
-        st.write(f"Length: {protein_data['Length']}")
-    else:
-        st.write("Length information not available")
-    st.write(f"Molecular Weight: {protein_data['Weight']}")
-    st.write(f"Function: {protein_data['Function']}")
-    if 'Structure' in protein_data:
-        st.write(f"Structure: {protein_data['Structure']}")
-    if 'Subcellular Location' in protein_data:
-        st.write(f"Subcellular Location: {protein_data['Subcellular Location']}")
-    if 'PTMs' in protein_data:
-        st.write("Post-Translational Modifications (PTMs):")
-        for ptm in protein_data['PTMs']:
-            st.write(ptm)
-    if 'Pathway' in protein_data:
-        st.write(f"Pathway Involvement: {protein_data['Pathway']}")
-    if 'Disease' in protein_data:
-        st.write(f"Disease Association: {protein_data['Disease']}")
-
-import requests
-
-# Function to retrieve protein-protein interaction network from STRING DB
-def get_ppi_network(uniprot_id):
-    proteins = ["ProteinA", "ProteinB", "ProteinC", "ProteinD", "ProteinE", "ProteinF", "ProteinG", "ProteinH", "ProteinI", "ProteinJ"]
-    interactions = []
-    for i in range(len(proteins)):
-        for j in range(i + 1, len(proteins)):
-            interactions.append((proteins[i], proteins[j]))
-    return interactions
-
-# Function to display protein-protein interaction network
-def display_ppi_network(interactions):
-    st.subheader("Protein-Protein Interaction Network")
-    fig, ax = plt.subplots()
-    G = nx.Graph()
-    G.add_edges_from(interactions)
-    pos = nx.spring_layout(G)
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', node_size=1500, font_size=10, font_color='black', edge_color='black', linewidths=1, arrows=False)
-    plt.title("Protein-Protein Interaction Network")
-    st.pyplot(fig)
-
-# Function to perform sequence alignment
-def perform_sequence_alignment(input_sequence, reference_sequence):
-    alignments = pairwise2.align.globalxx(input_sequence, reference_sequence, one_alignment_only=True)
-    return alignments[0]
-
-# Main function
+# Main application function
 def main():
-    st.title("Protein Data Explorer")
-    
-    # Dropdown to choose input type
-    input_type = st.selectbox("Choose Input Type", ["UniProt ID", "Protein Sequence"])
-    
-    if input_type == "UniProt ID":
-        uniprot_id = st.text_input("Enter UniProt ID:")
-        if st.button("Get Protein Data"):
-            if uniprot_id:
-                protein_data = get_protein_data(uniprot_id)
-                display_protein_characteristics(protein_data)
-                ppi_network = get_ppi_network(uniprot_id)  # Dummy implementation, replace with actual retrieval
-                display_ppi_network(ppi_network)
-    
-    elif input_type == "Protein Sequence":
-        # Protein sequence input
-        protein_sequence = st.text_area("Enter Protein Sequence:")
-        reference_sequence = "ACGT..."  # Reference sequence for alignment
+    st.title("Enhanced Protein Data Analysis App")
+    protein_id = st.sidebar.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
 
-        if st.button("Perform Sequence Alignment"):
-            if protein_sequence:
-                alignment = perform_sequence_alignment(protein_sequence, reference_sequence)
-                st.text("Sequence Alignment:")
-                st.text(format_alignment(*alignment))
+    analyze_button = st.sidebar.button("Analyze Protein")
+
+    if analyze_button:
+        show_progress_bar()
+        protein_data = fetch_protein_data(protein_id)
+        if protein_data:
+            display_protein_info(protein_data)
+            display_ppi_network(protein_id)
+
+    st.sidebar.subheader("Protein Sequence Analysis")
+    sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
+    sequence_button = st.sidebar.button("Analyze Sequence")
+
+    if sequence_button and sequence_input:
+        show_progress_bar()
+        analyze_protein_sequence(sequence_input)
+
+    # Button to trigger download preparation
+    if st.sidebar.button("Fetch and Prepare Download"):
+        fasta_data = fetch_fasta(protein_id)
+
+        if fasta_data:
+            # Download button for FASTA
+            st.download_button(
+                label="Download FASTA",
+                data=fasta_data,
+                file_name=f"{protein_id}.fasta",
+                mime="text/plain"
+            )
+        else:
+            st.error("Failed to retrieve the protein sequence.")
+
+# Function to fetch the protein sequence in FASTA format
+@st.cache_data
+def fetch_fasta(uniprot_id):
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.fasta"
+    response = requests.get(url)
+    if response.status_code == 200:
+        return response.text.encode('utf-8')  # Encode as bytes for download
+    else:
+        return None
+
+# Function to simulate a progress bar
+def show_progress_bar():
+    progress_text = "Operation in progress. Please wait."
+    my_bar = st.progress(0, text=progress_text)
+
+    for percent_complete in range(100):
+        time.sleep(0.01)  # Simulates progress
+        my_bar.progress(percent_complete + 1, text=progress_text)
+
+    time.sleep(1)  # Pause for a moment after completion
+    my_bar.empty()
+
+# Function to fetch protein data and parse XML with detailed fields
+def fetch_protein_data(uniprot_id):
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
+    response = requests.get(url)
+    if response.status_code == 200:
+        root = ET.fromstring(response.content)
+        description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
+        sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
+        organism = root.findtext('.//{http://uniprot.org/uniprot}organism/{http://uniprot.org/uniprot}name[@type="scientific"]')
+        function = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="function"]/{http://uniprot.org/uniprot}text')
+        subcellular_location = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="subcellular location"]/{http://uniprot.org/uniprot}location')
+        pathway = root.findtext('.//{http://uniprot.org/uniprot}dbReference[@type="Reactome"]')
+        disease = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="disease"]/{http://uniprot.org/uniprot}text')
+
+        return {
+            "description": description,
+            "sequence": sequence,
+            "organism": organism,
+            "function": function,
+            "subcellular_location": subcellular_location,
+            "pathway": pathway,
+            "disease": disease
+        }
+    else:
+        st.error("Failed to retrieve data.")
+        return None
+
+# Display protein characteristics
+def display_protein_info(data):
+    st.subheader("Protein Characteristics")
+    st.write("Description:", data["description"])
+    st.write("Organism:", data["organism"])
+    st.write("Protein Length:", len(data["sequence"]))
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(data["sequence"], seq_type='protein')))
+    st.write("Function:", data["function"])
+    st.write("Subcellular Location:", data["subcellular_location"])
+    st.write("Pathway:", data["pathway"])
+    st.write("Disease Association:", data["disease"])
+
+# Display the Protein-Protein Interaction Network (Placeholder)
+def display_ppi_network(uniprot_id):
+    st.subheader("Protein-Protein Interaction Network")
+    G = nx.Graph()
+    G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
+    G.add_edge("Protein1", "Protein3")
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(8, 8))
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
+    st.pyplot(plt.gcf())
+    plt.clf()
+
+# Analyze a protein sequence by calculating molecular weight and alignment
+def analyze_protein_sequence(sequence):
+    seq = Seq(sequence)
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
+    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
+
+# Align two sequences and show the alignment
+def align_sequences(seq1, seq2):
+    alignments = pairwise2.align.globalxx(seq1, seq2)
+    alignment_text = pairwise2.format_alignment(*alignments[0])
+    st.text("Alignment:")
+    st.text(alignment_text)
 
 if __name__ == "__main__":
     main()
