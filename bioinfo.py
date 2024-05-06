@@ -98,21 +98,27 @@ def align_sequences(seq1, seq2):
         st.warning("No alignments found.")
 
 
-# Fetch protein data in XML (for general info)
+# Function to fetch protein data and parse XML
 def fetch_protein_data(uniprot_id):
     url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
-    if response.status_code == 200:
-        root = ET.fromstring(response.content)
-        description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
-        sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
-        return {
-            "description": description,
-            "sequence": sequence
-        }
+
+    if response.status_code == 200 and response.content:
+        try:
+            root = ET.fromstring(response.content)
+            description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
+            sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
+            return {
+                "description": description,
+                "sequence": sequence
+            }
+        except ET.ParseError:
+            st.error("Failed to parse the XML response. The UniProt ID may not exist or is inaccessible.")
+            return None
     else:
-        st.error("Failed to retrieve data.")
+        st.error("Failed to retrieve data. Please check the UniProt ID or network connectivity.")
         return None
+
 
 
 # Display protein characteristics
