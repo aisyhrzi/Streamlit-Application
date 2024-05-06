@@ -117,11 +117,10 @@ def analyze_protein_sequence(sequence):
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
     align_sequences(global_fasta_sequence, sequence)  # Align against the FASTA sequence
 
-
 # Extract the sequence portion from the FASTA format and align two sequences
 def align_sequences(fasta_seq, input_seq):
-    # Extract the sequence from the FASTA format (ignoring the first header line)
-    fasta_lines = fasta_seq.decode("utf-8").splitlines()
+    # Split the FASTA data into lines (ignoring the first header line)
+    fasta_lines = fasta_seq.splitlines()
     uniprot_seq = "".join(line for line in fasta_lines if not line.startswith(">"))
 
     alignments = pairwise2.align.globalxx(uniprot_seq, input_seq)
@@ -131,6 +130,7 @@ def align_sequences(fasta_seq, input_seq):
         st.text(alignment_text)
     else:
         st.warning("No alignments found.")
+
 
 
 if __name__ == "__main__":
