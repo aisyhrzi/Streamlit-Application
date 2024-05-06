@@ -49,46 +49,15 @@ def main():
             st.error("Failed to retrieve the protein sequence.")
 
 # Function to fetch the protein sequence in FASTA format
-@st.cache_data
+@st.cache
 def fetch_fasta(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.fasta"
+    url = f"https://www.uniprot.org/uniprot/{uniprot_id}.fasta"
     response = requests.get(url)
     if response.status_code == 200:
         return response.text.encode('utf-8')  # Encode as bytes for download
     else:
         return None
-def fetch_string_ppi(uniprot_id, min_score=700):
-    url = "https://string-db.org/api/json/network"
-    params = {
-        "identifiers": uniprot_id,  # Protein identifier
-        "species": 9606,            # Species (9606 for Homo sapiens)
-        "required_score": min_score  # Minimum interaction score
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error("Failed to retrieve data from STRING.")
-        return None
 
-# Function to build and visualize a PPI network using NetworkX
-def display_ppi_network(ppi_data):
-    if not ppi_data:
-        st.write("No interaction data available.")
-        return
-
-    G = nx.Graph()
-    for interaction in ppi_data:
-        protein1 = interaction["preferredName_A"]
-        protein2 = interaction["preferredName_B"]
-        score = interaction["score"]
-        G.add_edge(protein1, protein2, weight=score)
-
-    pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
-    plt.figure(figsize=(10, 10))
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
-    st.pyplot(plt.gcf())
-    plt.clf()
 # Function to simulate a progress bar
 def show_progress_bar():
     progress_text = "Operation in progress. Please wait."
@@ -103,7 +72,7 @@ def show_progress_bar():
 
 # Function to fetch protein data and parse XML with detailed fields
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
+    url = f"https://www.uniprot.org/uniprot/{uniprot_id}.xml"
     response = requests.get(url)
     if response.status_code == 200:
         root = ET.fromstring(response.content)
@@ -140,17 +109,40 @@ def display_protein_info(data):
     st.write("Pathway:", data["pathway"])
     st.write("Disease Association:", data["disease"])
 
-# Display the Protein-Protein Interaction Network (Placeholder)
+# Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
-    G = nx.Graph()
-    G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
-    G.add_edge("Protein1", "Protein3")
-    pos = nx.spring_layout(G)
-    plt.figure(figsize=(8, 8))
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
-    st.pyplot(plt.gcf())
-    plt.clf()
+    ppi_data = fetch_string_ppi(uniprot_id)
+    if ppi_data:
+        G = nx.Graph()
+        for interaction in ppi_data:
+            protein1 = interaction["preferredName_A"]
+            protein2 = interaction["preferredName_B"]
+            score = interaction["score"]
+            G.add_edge(protein1, protein2, weight=score)
+
+        pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
+        plt.figure(figsize=(10, 10))
+        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        st.pyplot(plt.gcf())
+        plt.clf()
+    else:
+        st.write("No interaction data available.")
+
+# Function to fetch protein-protein interaction data from STRING DB
+def fetch_string_ppi(uniprot_id, min_score=700):
+    url = "https://string-db.org/api/json/network"
+    params = {
+        "identifiers": uniprot_id,  # Protein identifier
+        "species": 9606,            # Species (9606 for Homo sapiens)
+        "required_score": min_score  # Minimum interaction score
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error("Failed to retrieve data from STRING.")
+        return None
 
 # Analyze a protein sequence by calculating molecular weight and alignment
 def analyze_protein_sequence(sequence):
@@ -167,3 +159,4 @@ def align_sequences(seq1, seq2):
 
 if __name__ == "__main__":
     main()
+
