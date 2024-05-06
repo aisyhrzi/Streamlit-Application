@@ -5,11 +5,11 @@ import matplotlib.pyplot as plt
 from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
 from Bio.Seq import Seq
+from xml.etree import ElementTree as ET
 import time
 
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
-
 
 def main():
     st.title("Protein Data Analysis App")
@@ -30,8 +30,7 @@ def main():
 
     if sequence_button and sequence_input:
         show_progress_bar()
-        uniprot_sequence = extract_sequence_from_fasta(fetch_fasta(protein_id))
-        analyze_protein_sequence(sequence_input, uniprot_sequence)
+        analyze_protein_sequence(sequence_input)
 
     # Button to trigger download preparation
     if st.sidebar.button("Fetch and Prepare Download"):
@@ -48,7 +47,6 @@ def main():
         else:
             st.error("Failed to retrieve the protein sequence.")
 
-
 # Function to fetch the protein sequence in FASTA format
 @st.cache_data
 def fetch_fasta(uniprot_id):
@@ -57,9 +55,7 @@ def fetch_fasta(uniprot_id):
     if response.status_code == 200:
         return response.text.encode('utf-8')  # Encode as bytes for download
     else:
-        st.error("Failed to retrieve the protein sequence.")
         return None
-
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -73,53 +69,21 @@ def show_progress_bar():
     time.sleep(1)  # Pause for a moment after completion
     my_bar.empty()
 
-
-# Extract only the sequence portion from the FASTA data
-def extract_sequence_from_fasta(fasta_data):
-    fasta_lines = fasta_data.splitlines()
-    return "".join(line.strip() for line in fasta_lines if not line.startswith(">"))
-
-
-# Analyze a protein sequence by calculating molecular weight and alignment
-def analyze_protein_sequence(user_sequence, uniprot_sequence):
-    seq = Seq(user_sequence)
-    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
-    align_sequences(uniprot_sequence, user_sequence)
-
-
-# Align two sequences and show the alignment
-def align_sequences(seq1, seq2):
-    alignments = pairwise2.align.globalxx(seq1, seq2)
-    if alignments:
-        alignment_text = pairwise2.format_alignment(*alignments[0])
-        st.text("Alignment:")
-        st.text(alignment_text)
-    else:
-        st.warning("No alignments found.")
-
-
 # Function to fetch protein data and parse XML
 def fetch_protein_data(uniprot_id):
     url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
-
-    if response.status_code == 200 and response.content:
-        try:
-            root = ET.fromstring(response.content)
-            description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
-            sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
-            return {
-                "description": description,
-                "sequence": sequence
-            }
-        except ET.ParseError:
-            st.error("Failed to parse the XML response. The UniProt ID may not exist or is inaccessible.")
-            return None
+    if response.status_code == 200:
+        root = ET.fromstring(response.content)
+        description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
+        sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
+        return {
+            "description": description,
+            "sequence": sequence
+        }
     else:
-        st.error("Failed to retrieve data. Please check the UniProt ID or network connectivity.")
+        st.error("Failed to retrieve data.")
         return None
-
-
 
 # Display protein characteristics
 def display_protein_info(data):
@@ -128,8 +92,6 @@ def display_protein_info(data):
     st.write("Protein Length:", len(data["sequence"]))
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(data["sequence"], seq_type='protein')))
 
-
-# Display the Protein-Protein Interaction Network
 # Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
@@ -142,7 +104,18 @@ def display_ppi_network(uniprot_id):
     st.pyplot(plt.gcf())
     plt.clf()
 
+# Analyze a protein sequence by calculating molecular weight and alignment
+def analyze_protein_sequence(sequence):
+    seq = Seq(sequence)
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
+    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
 
+# Align two sequences and show the alignment
+def align_sequences(seq1, seq2):
+    alignments = pairwise2.align.globalxx(seq1, seq2)
+    alignment_text = pairwise2.format_alignment(*alignments[0])
+    st.text("Alignment:")
+    st.text(alignment_text)
 
 if __name__ == "__main__":
     main()
