@@ -10,9 +10,11 @@ import time
 
 # Global variable to store the protein sequence fetched from UniProt
 global_protein_sequence = ""
+global_fasta_sequence = ""
 
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
+
 
 def main():
     st.title("Protein Data Analysis App")
@@ -24,8 +26,9 @@ def main():
         show_progress_bar()
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
-            global global_protein_sequence
+            global global_protein_sequence, global_fasta_sequence
             global_protein_sequence = protein_data["sequence"]  # Store the UniProt sequence globally
+            global_fasta_sequence = fetch_fasta(protein_id)
             display_protein_info(protein_data)
             display_ppi_network(protein_id)
 
@@ -33,24 +36,23 @@ def main():
     sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
     sequence_button = st.sidebar.button("Analyze Sequence")
 
-    if sequence_button and sequence_input and global_protein_sequence:
+    if sequence_button and sequence_input:
         show_progress_bar()
         analyze_protein_sequence(sequence_input)
 
     # Button to trigger download preparation
     if st.sidebar.button("Fetch and Prepare Download"):
-        fasta_data = fetch_fasta(protein_id)
-
-        if fasta_data:
+        if global_fasta_sequence:
             # Download button for FASTA
             st.download_button(
                 label="Download FASTA",
-                data=fasta_data,
+                data=global_fasta_sequence,
                 file_name=f"{protein_id}.fasta",
                 mime="text/plain"
             )
         else:
             st.error("Failed to retrieve the protein sequence.")
+
 
 # Function to fetch the protein sequence in FASTA format
 @st.cache_data
@@ -61,6 +63,7 @@ def fetch_fasta(uniprot_id):
         return response.text.encode('utf-8')  # Encode as bytes for download
     else:
         return None
+
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -73,6 +76,7 @@ def show_progress_bar():
 
     time.sleep(1)  # Pause for a moment after completion
     my_bar.empty()
+
 
 # Function to fetch protein data and parse XML
 def fetch_protein_data(uniprot_id):
@@ -90,12 +94,14 @@ def fetch_protein_data(uniprot_id):
         st.error("Failed to retrieve data.")
         return None
 
+
 # Display protein characteristics
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
     st.write("Description:", data["description"])
     st.write("Protein Length:", len(data["sequence"]))
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(data["sequence"], seq_type='protein')))
+
 
 # Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
@@ -109,11 +115,13 @@ def display_ppi_network(uniprot_id):
     st.pyplot(plt.gcf())
     plt.clf()
 
+
 # Analyze a protein sequence by calculating molecular weight and alignment
 def analyze_protein_sequence(sequence):
     seq = Seq(sequence)
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
     align_sequences(global_protein_sequence, sequence)  # Align against the sequence fetched from UniProt
+
 
 # Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
@@ -124,6 +132,7 @@ def align_sequences(seq1, seq2):
         st.text(alignment_text)
     else:
         st.warning("No alignments found.")
+
 
 if __name__ == "__main__":
     main()
