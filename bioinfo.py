@@ -124,6 +124,7 @@ def display_protein_info(data):
 
 
 # Display the Protein-Protein Interaction Network
+# Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
     G = nx.Graph()
@@ -131,9 +132,10 @@ def display_ppi_network(uniprot_id):
     G.add_edge("Protein1", "Protein3")
     pos = nx.spring_layout(G)
     plt.figure(figsize=(8, 8))
-    nx.draw(G, pos, with labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
     st.pyplot(plt.gcf())
     plt.clf()
+
 
 
 if __name__ == "__main__":
