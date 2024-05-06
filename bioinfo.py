@@ -66,8 +66,8 @@ def show_progress_bar():
         time.sleep(0.01)  # Simulates progress
         my_bar.progress(percent_complete + 1, text=progress_text)
 
-    time.sleep(1)  # Pause for a moment after completion
-    my_bar.empty()
+        time.sleep(1)  # Pause for a moment after completion
+        my_bar.empty()
 
 
 # Function to fetch protein data and parse XML
