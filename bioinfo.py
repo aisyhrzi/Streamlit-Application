@@ -57,7 +57,38 @@ def fetch_fasta(uniprot_id):
         return response.text.encode('utf-8')  # Encode as bytes for download
     else:
         return None
+def fetch_string_ppi(uniprot_id, min_score=700):
+    url = "https://string-db.org/api/json/network"
+    params = {
+        "identifiers": uniprot_id,  # Protein identifier
+        "species": 9606,            # Species (9606 for Homo sapiens)
+        "required_score": min_score  # Minimum interaction score
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error("Failed to retrieve data from STRING.")
+        return None
 
+# Function to build and visualize a PPI network using NetworkX
+def display_ppi_network(ppi_data):
+    if not ppi_data:
+        st.write("No interaction data available.")
+        return
+
+    G = nx.Graph()
+    for interaction in ppi_data:
+        protein1 = interaction["preferredName_A"]
+        protein2 = interaction["preferredName_B"]
+        score = interaction["score"]
+        G.add_edge(protein1, protein2, weight=score)
+
+    pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
+    plt.figure(figsize=(10, 10))
+    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+    st.pyplot(plt.gcf())
+    plt.clf()
 # Function to simulate a progress bar
 def show_progress_bar():
     progress_text = "Operation in progress. Please wait."
