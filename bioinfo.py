@@ -31,7 +31,7 @@ def main():
 
     if sequence_button and sequence_input:
         show_progress_bar()
-        analyze_protein_sequence(sequence_input)
+        analyze_protein_sequence(protein_id, sequence_input)
 
     # Button to trigger download preparation
     if st.sidebar.button("Fetch and Prepare Download"):
@@ -145,10 +145,11 @@ def fetch_string_ppi(uniprot_id, min_score=700):
         return None
 
 # Analyze a protein sequence by calculating molecular weight and alignment
-def analyze_protein_sequence(sequence):
-    seq = Seq(sequence)
-    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
-    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
+def analyze_protein_sequence(protein_id, sequence):
+    seq1 = Seq(fetch_protein_data(protein_id)["sequence"])
+    seq2 = Seq(sequence)
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq2, seq_type='protein')))
+    align_sequences(seq1, seq2) 
 
 # Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
@@ -159,4 +160,3 @@ def align_sequences(seq1, seq2):
 
 if __name__ == "__main__":
     main()
-
