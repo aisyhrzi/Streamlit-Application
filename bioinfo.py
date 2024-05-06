@@ -28,8 +28,12 @@ def main():
     sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
     sequence_button = st.sidebar.button("Analyze Sequence")
 
-    if sequence_button and sequence_input and global_protein_sequence:
-        analyze_protein_sequence(sequence_input)
+    if sequence_button and sequence_input:
+        st.write("User-Provided Sequence:", sequence_input)  # Log user input
+        if global_protein_sequence:
+            analyze_protein_sequence(sequence_input)
+        else:
+            st.error("No UniProt sequence retrieved. Please analyze a protein by UniProt ID first.")
 
 # Function to fetch protein data and parse XML
 def fetch_protein_data(uniprot_id):
@@ -56,8 +60,7 @@ def display_protein_info(data):
 # Analyze a protein sequence by aligning it against the retrieved UniProt sequence
 def analyze_protein_sequence(sequence):
     global global_protein_sequence  # Access the global protein sequence
-    st.write("User-Provided Sequence:", sequence)  # Confirm user input
-    st.write("Aligning against the retrieved UniProt sequence...")
+    st.write("Aligning the User-Provided Sequence against the retrieved UniProt sequence...")
     align_sequences(global_protein_sequence, sequence)  # Align against the sequence retrieved from UniProt
 
 # Align two sequences and show the alignment
