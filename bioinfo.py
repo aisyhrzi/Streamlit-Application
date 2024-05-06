@@ -1,12 +1,14 @@
 import streamlit as st
 import requests
-import networkx as nx
-import matplotlib.pyplot as plt
-from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
 from Bio.Seq import Seq
+from xml.etree import ElementTree as ET
+from Bio.SeqUtils import molecular_weight
 
-# Streamlit Page Config
+# Global variable to store the protein sequence retrieved from UniProt
+global_protein_sequence = ""  # Initialize as empty
+
+# Streamlit page configuration
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
 
 def main():
@@ -16,59 +18,57 @@ def main():
     analyze_button = st.sidebar.button("Analyze Protein")
 
     if analyze_button:
+        global global_protein_sequence  # Use the global variable to store the retrieved sequence
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
+            global_protein_sequence = protein_data["sequence"]  # Save retrieved sequence globally
             display_protein_info(protein_data)
-            display_ppi_network(protein_id)
 
     st.sidebar.subheader("Protein Sequence Analysis")
     sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
     sequence_button = st.sidebar.button("Analyze Sequence")
 
-    if sequence_button and sequence_input:
+    if sequence_button and sequence_input and global_protein_sequence:
         analyze_protein_sequence(sequence_input)
 
+# Function to fetch protein data and parse XML
 def fetch_protein_data(uniprot_id):
-    url = f"https://rest.uniprot.org/uniprotkb/v1/uniprotkb/{uniprot_id}.xml"
+    url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
     if response.status_code == 200:
-        data = response.text
-        # Parsing XML data to retrieve specific information
-        # Placeholder for real parsing logic
+        root = ET.fromstring(response.content)
+        description = root.findtext('.//{http://uniprot.org/uniprot}fullName')
+        sequence = root.findtext('.//{http://uniprot.org/uniprot}sequence').replace('\n', '').strip()
         return {
-            "description": "Human TP53 tumor protein",
-            "sequence": "MVMEESQTSDQSKE"
+            "description": description,
+            "sequence": sequence
         }
     else:
         st.error("Failed to retrieve data.")
         return None
 
+# Display protein characteristics
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
     st.write("Description:", data["description"])
     st.write("Protein Length:", len(data["sequence"]))
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(data["sequence"], seq_type='protein')))
 
-def display_ppi_network(uniprot_id):
-    st.subheader("Protein-Protein Interaction Network")
-    G = nx.Graph()
-    G.add_edge("Protein1", "Protein2")  # Placeholder for actual PPI data
-    G.add_edge("Protein1", "Protein3")
-    pos = nx.spring_layout(G)
-    plt.figure(figsize=(8, 8))
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
-    st.pyplot(plt)
-
+# Function to analyze a protein sequence by aligning it against the retrieved UniProt sequence
 def analyze_protein_sequence(sequence):
-    seq = Seq(sequence)
-    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
-    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
+    global global_protein_sequence  # Access the global protein sequence
+    st.write("Aligning against retrieved UniProt sequence...")
+    align_sequences(global_protein_sequence, sequence)
 
+# Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
-    alignments = pairwise2.align.globalxx(seq1, seq2)
-    alignment_text = pairwise2.format_alignment(*alignments[0])
-    st.text("Alignment:")
-    st.text(alignment_text)
+    alignments = pairwise2.align.globalxx(seq1, seq2)  # Global alignment between the two sequences
+    if alignments:
+        alignment_text = pairwise2.format_alignment(*alignments[0])  # Format the first alignment result
+        st.text("Alignment:")
+        st.text(alignment_text)
+    else:
+        st.warning("No alignments found.")
 
 if __name__ == "__main__":
     main()
