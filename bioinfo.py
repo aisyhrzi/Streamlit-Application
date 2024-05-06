@@ -119,10 +119,20 @@ def analyze_protein_sequence(sequence):
 
 # Extract the sequence portion from the FASTA format and align two sequences
 def align_sequences(fasta_seq, input_seq):
+    # Debugging: Print the raw FASTA sequence for validation
+    st.text("FASTA Sequence from UniProt (first 500 chars):")
+    st.text(fasta_seq[:500])
+
     # Split the FASTA data into lines (ignoring the first header line)
     fasta_lines = fasta_seq.splitlines()
     uniprot_seq = "".join(line.strip().upper() for line in fasta_lines if not line.startswith(">"))
     input_seq = input_seq.strip().upper()
+
+    # Debugging: Print the extracted and input sequences for validation
+    st.text("Extracted UniProt Sequence (first 500 chars):")
+    st.text(uniprot_seq[:500])
+    st.text("Input Sequence:")
+    st.text(input_seq)
 
     # Check for empty sequences
     if not uniprot_seq or not input_seq:
@@ -136,6 +146,7 @@ def align_sequences(fasta_seq, input_seq):
         st.text(alignment_text)
     else:
         st.warning("No alignments found.")
+
 
 
 
