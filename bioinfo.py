@@ -152,11 +152,15 @@ def analyze_protein_sequence(protein_id, sequence):
     align_sequences(seq1, seq2) 
 
 # Align two sequences and show the alignment
+# Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
     alignments = pairwise2.align.globalxx(seq1, seq2)
-    alignment_text = pairwise2.format_alignment(*alignments[0])
-    st.text("Alignment:")
-    st.text(alignment_text)
+    if alignments:
+        alignment_text = pairwise2.format_alignment(*alignments[0])
+        st.text("Alignment:")
+        st.text(alignment_text)
+    else:
+        st.write("No alignment found.")
 
 if __name__ == "__main__":
     main()
