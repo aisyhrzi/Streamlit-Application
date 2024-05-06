@@ -121,7 +121,13 @@ def analyze_protein_sequence(sequence):
 def align_sequences(fasta_seq, input_seq):
     # Split the FASTA data into lines (ignoring the first header line)
     fasta_lines = fasta_seq.splitlines()
-    uniprot_seq = "".join(line for line in fasta_lines if not line.startswith(">"))
+    uniprot_seq = "".join(line.strip().upper() for line in fasta_lines if not line.startswith(">"))
+    input_seq = input_seq.strip().upper()
+
+    # Check for empty sequences
+    if not uniprot_seq or not input_seq:
+        st.warning("One or both sequences are empty. Please verify the data.")
+        return
 
     alignments = pairwise2.align.globalxx(uniprot_seq, input_seq)
     if alignments:
@@ -130,6 +136,7 @@ def align_sequences(fasta_seq, input_seq):
         st.text(alignment_text)
     else:
         st.warning("No alignments found.")
+
 
 
 
