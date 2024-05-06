@@ -8,6 +8,9 @@ from Bio.Seq import Seq
 from xml.etree import ElementTree as ET
 import time
 
+# Global variable to store the protein sequence fetched from UniProt
+global_protein_sequence = ""
+
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
 
@@ -21,6 +24,8 @@ def main():
         show_progress_bar()
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
+            global global_protein_sequence
+            global_protein_sequence = protein_data["sequence"]  # Store the UniProt sequence globally
             display_protein_info(protein_data)
             display_ppi_network(protein_id)
 
@@ -28,7 +33,7 @@ def main():
     sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
     sequence_button = st.sidebar.button("Analyze Sequence")
 
-    if sequence_button and sequence_input:
+    if sequence_button and sequence_input and global_protein_sequence:
         show_progress_bar()
         analyze_protein_sequence(sequence_input)
 
@@ -108,14 +113,17 @@ def display_ppi_network(uniprot_id):
 def analyze_protein_sequence(sequence):
     seq = Seq(sequence)
     st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
-    align_sequences("MVMEESQTSDQSKE", sequence)  # Example alignment with dummy data
+    align_sequences(global_protein_sequence, sequence)  # Align against the sequence fetched from UniProt
 
 # Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
     alignments = pairwise2.align.globalxx(seq1, seq2)
-    alignment_text = pairwise2.format_alignment(*alignments[0])
-    st.text("Alignment:")
-    st.text(alignment_text)
+    if alignments:
+        alignment_text = pairwise2.format_alignment(*alignments[0])
+        st.text("Alignment:")
+        st.text(alignment_text)
+    else:
+        st.warning("No alignments found.")
 
 if __name__ == "__main__":
     main()
