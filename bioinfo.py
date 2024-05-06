@@ -5,11 +5,7 @@ import matplotlib.pyplot as plt
 from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
 from Bio.Seq import Seq
-from xml.etree import ElementTree as ET
 import time
-
-# Global variable to store the protein sequence fetched from UniProt in FASTA format
-global_fasta_sequence = ""
 
 # Streamlit Page Config
 st.set_page_config(page_title="Protein Data Analysis", layout="wide")
@@ -25,8 +21,6 @@ def main():
         show_progress_bar()
         protein_data = fetch_protein_data(protein_id)
         if protein_data:
-            global global_fasta_sequence
-            global_fasta_sequence = fetch_fasta(protein_id)
             display_protein_info(protein_data)
             display_ppi_network(protein_id)
 
@@ -36,16 +30,23 @@ def main():
 
     if sequence_button and sequence_input:
         show_progress_bar()
-        analyze_protein_sequence(sequence_input)
+        uniprot_sequence = extract_sequence_from_fasta(fetch_fasta(protein_id))
+        analyze_protein_sequence(sequence_input, uniprot_sequence)
 
     # Button to trigger download preparation
-    if st.sidebar.button("Fetch and Prepare Download") and global_fasta_sequence:
-        st.download_button(
-            label="Download FASTA",
-            data=global_fasta_sequence,
-            file_name=f"{protein_id}.fasta",
-            mime="text/plain"
-        )
+    if st.sidebar.button("Fetch and Prepare Download"):
+        fasta_data = fetch_fasta(protein_id)
+
+        if fasta_data:
+            # Download button for FASTA
+            st.download_button(
+                label="Download FASTA",
+                data=fasta_data,
+                file_name=f"{protein_id}.fasta",
+                mime="text/plain"
+            )
+        else:
+            st.error("Failed to retrieve the protein sequence.")
 
 
 # Function to fetch the protein sequence in FASTA format
@@ -73,7 +74,31 @@ def show_progress_bar():
     my_bar.empty()
 
 
-# Function to fetch protein data and parse XML
+# Extract only the sequence portion from the FASTA data
+def extract_sequence_from_fasta(fasta_data):
+    fasta_lines = fasta_data.splitlines()
+    return "".join(line.strip() for line in fasta_lines if not line.startswith(">"))
+
+
+# Analyze a protein sequence by calculating molecular weight and alignment
+def analyze_protein_sequence(user_sequence, uniprot_sequence):
+    seq = Seq(user_sequence)
+    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
+    align_sequences(uniprot_sequence, user_sequence)
+
+
+# Align two sequences and show the alignment
+def align_sequences(seq1, seq2):
+    alignments = pairwise2.align.globalxx(seq1, seq2)
+    if alignments:
+        alignment_text = pairwise2.format_alignment(*alignments[0])
+        st.text("Alignment:")
+        st.text(alignment_text)
+    else:
+        st.warning("No alignments found.")
+
+
+# Fetch protein data in XML (for general info)
 def fetch_protein_data(uniprot_id):
     url = f"https://rest.uniprot.org/uniprotkb/{uniprot_id}.xml"
     response = requests.get(url)
@@ -106,49 +131,9 @@ def display_ppi_network(uniprot_id):
     G.add_edge("Protein1", "Protein3")
     pos = nx.spring_layout(G)
     plt.figure(figsize=(8, 8))
-    nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
+    nx.draw(G, pos, with labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10)
     st.pyplot(plt.gcf())
     plt.clf()
-
-
-# Analyze a protein sequence by calculating molecular weight and alignment
-def analyze_protein_sequence(sequence):
-    seq = Seq(sequence)
-    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq, seq_type='protein')))
-    align_sequences(global_fasta_sequence, sequence)  # Align against the FASTA sequence
-
-# Extract the sequence portion from the FASTA format and align two sequences
-def align_sequences(fasta_seq, input_seq):
-    # Debugging: Print the raw FASTA sequence for validation
-    st.text("FASTA Sequence from UniProt (first 500 chars):")
-    st.text(fasta_seq[:500])
-
-    # Split the FASTA data into lines (ignoring the first header line)
-    fasta_lines = fasta_seq.splitlines()
-    uniprot_seq = "".join(line.strip().upper() for line in fasta_lines if not line.startswith(">"))
-    input_seq = input_seq.strip().upper()
-
-    # Debugging: Print the extracted and input sequences for validation
-    st.text("Extracted UniProt Sequence (first 500 chars):")
-    st.text(uniprot_seq[:500])
-    st.text("Input Sequence:")
-    st.text(input_seq)
-
-    # Check for empty sequences
-    if not uniprot_seq or not input_seq:
-        st.warning("One or both sequences are empty. Please verify the data.")
-        return
-
-    alignments = pairwise2.align.globalxx(uniprot_seq, input_seq)
-    if alignments:
-        alignment_text = pairwise2.format_alignment(*alignments[0])
-        st.text("Alignment:")
-        st.text(alignment_text)
-    else:
-        st.warning("No alignments found.")
-
-
-
 
 
 if __name__ == "__main__":
