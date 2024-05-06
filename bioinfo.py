@@ -146,12 +146,15 @@ def fetch_string_ppi(uniprot_id, min_score=700):
 
 # Analyze a protein sequence by calculating molecular weight and alignment
 def analyze_protein_sequence(protein_id, sequence):
-    seq1 = Seq(fetch_protein_data(protein_id)["sequence"])
-    seq2 = Seq(sequence)
-    st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq2, seq_type='protein')))
-    align_sequences(seq1, seq2) 
+    fasta_sequence = fetch_fasta(protein_id)
+    if fasta_sequence:
+        seq1 = Seq(fasta_sequence.decode("utf-8").split('\n', 1)[1].replace('\n', ''))
+        seq2 = Seq(sequence)
+        st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq2, seq_type='protein')))
+        align_sequences(seq1, seq2) 
+    else:
+        st.error("Failed to fetch protein sequence.")
 
-# Align two sequences and show the alignment
 # Align two sequences and show the alignment
 def align_sequences(seq1, seq2):
     alignments = pairwise2.align.globalxx(seq1, seq2)
