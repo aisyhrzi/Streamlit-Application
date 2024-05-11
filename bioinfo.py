@@ -96,8 +96,7 @@ def fetch_protein_data(uniprot_id):
     else:
         st.error("Failed to retrieve data.")
         return None
-
-# Display protein characteristics
+    # Display protein characteristics
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
     st.write("Description:", data["description"])
