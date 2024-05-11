@@ -164,5 +164,5 @@ def align_sequences(seq1, seq2):
     else:
         st.write("No alignment found.")
 
-if name == "main":
+if __name__ == "__main__":
     main()
