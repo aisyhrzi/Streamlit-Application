@@ -1,4 +1,3 @@
-aisyah, [7/5/2024 3:34 AM]
 import streamlit as st
 import requests
 import networkx as nx
@@ -98,7 +97,6 @@ def fetch_protein_data(uniprot_id):
         st.error("Failed to retrieve data.")
         return None
 
-aisyah, [7/5/2024 3:34 AM]
 # Display protein characteristics
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
