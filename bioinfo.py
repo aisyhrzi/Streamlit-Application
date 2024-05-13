@@ -18,11 +18,48 @@ st.markdown(
     """
     <style>
     .main-container {
-        background-color: #f0f2f6;
+        background-color: #000000;
         padding-top: 2rem;
         padding-right: 2rem;
         padding-left: 2rem;
         padding-bottom: 2rem;
+    }
+    .stTextInput>div>div>input {
+        color: #FFC0CB;
+        background-color: #000000;
+        border-color: #FFC0CB;
+    }
+    .stButton>button {
+        color: #FFFFFF;
+        background-color: #FF69B4;
+    }
+    .stRadio>div>div>label>div:first-child {
+        color: #FFC0CB;
+    }
+    .stRadio>div>div>div {
+        color: #FFC0CB;
+    }
+    .stRadio>div>div>label>input:checked+div {
+        border-color: #FF69B4;
+    }
+    .stTextArea>div>textarea {
+        color: #FFC0CB;
+        background-color: #000000;
+        border-color: #FFC0CB;
+    }
+    .stProgress>div>div {
+        background-color: #FF69B4 !important;
+    }
+    .stText>div {
+        color: #FFC0CB;
+    }
+    .stSelectbox>div>div>div>div>div {
+        color: #FFC0CB;
+        background-color: #000000;
+        border-color: #FFC0CB;
+    }
+    .stGraph>div>div>div>div>div>canvas {
+        background-color: #000000;
     }
     </style>
     """,
@@ -119,11 +156,11 @@ def display_ppi_network(uniprot_id):
 
         pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
         plt.figure(figsize=(10, 10))
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        nx.draw(G, pos, with_labels=True, node_color='#FFC0CB', edge_color='#FFC0CB', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
         st.pyplot(plt.gcf())
         plt.clf()
     else:
-        st.write("No interaction data available.")
+         st.write("No interaction data available.")
 
 # Function to fetch protein-protein interaction data from STRING DB
 def fetch_string_ppi(uniprot_id, min_score=700):
@@ -187,7 +224,7 @@ def analyze_protein_sequence(sequence_input):
 
         pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
         plt.figure(figsize=(10, 10))
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        nx.draw(G, pos, with_labels=True, node_color='#FFC0CB', edge_color='#FFC0CB', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
         st.pyplot(plt.gcf())
         plt.clf()
     else:
@@ -195,3 +232,4 @@ def analyze_protein_sequence(sequence_input):
 
 if __name__ == "__main__":
     main()
+
