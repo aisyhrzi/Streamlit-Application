@@ -4,52 +4,54 @@ import networkx as nx
 import matplotlib.pyplot as plt
 from Bio.SeqUtils import molecular_weight
 from Bio import pairwise2
-from Bio.Seq import Seq
 from xml.etree import ElementTree as ET
 import time
+import difflib
 
 # Streamlit Page Config
-st.set_page_config(page_title="Enhanced Protein Data Analysis", layout="wide")
+st.set_page_config(page_title="Protein Data Analysis", layout="centered")
 
-# Main application function
 def main():
-    st.title("Enhanced Protein Data Analysis App")
-    protein_id = st.sidebar.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
+    st.title("Protein Data Analysis App")
+    
+    st.write("## Choose Data Source")
+    data_source = st.radio("Select Data Source", ('UniProt ID', 'Protein Sequence'))
 
-    analyze_button = st.sidebar.button("Analyze Protein")
-
-    if analyze_button:
-        show_progress_bar()
-        protein_data = fetch_protein_data(protein_id)
-        if protein_data:
-            display_protein_info(protein_data)
-            display_ppi_network(protein_id)
-
-    st.sidebar.subheader("Protein Sequence Analysis")
-    sequence_input = st.sidebar.text_area("Enter Protein Sequence", value="")
-    sequence_button = st.sidebar.button("Analyze Sequence")
-
-    if sequence_button and sequence_input:
-        show_progress_bar()
-        analyze_protein_sequence(protein_id, sequence_input)
+    if data_source == 'UniProt ID':
+        protein_id = st.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
+        analyze_button = st.button("Analyze Protein")
+        if analyze_button:
+            show_progress_bar()
+            protein_data = fetch_protein_data(protein_id)
+            if protein_data:
+                display_protein_info(protein_data)
+                display_ppi_network(protein_id)
+    elif data_source == 'Protein Sequence':
+        sequence_input = st.text_area("Enter Protein Sequence", value="")
+        analyze_button = st.button("Analyze Sequence")
+        if analyze_button and sequence_input:
+            show_progress_bar()
+            analyze_protein_sequence(sequence_input)
 
     # Button to trigger download preparation
-    if st.sidebar.button("Fetch and Prepare Download"):
-        fasta_data = fetch_fasta(protein_id)
-
-        if fasta_data:
-            # Download button for FASTA
-            st.download_button(
-                label="Download FASTA",
-                data=fasta_data,
-                file_name=f"{protein_id}.fasta",
-                mime="text/plain"
-            )
-        else:
-            st.error("Failed to retrieve the protein sequence.")
+    if st.button("Fetch and Prepare Download"):
+        if data_source == 'UniProt ID':
+            fasta_data = fetch_fasta(protein_id)
+            if fasta_data:
+                # Download button for FASTA
+                st.download_button(
+                    label="Download FASTA",
+                    data=fasta_data,
+                    file_name=f"{protein_id}.fasta",
+                    mime="text/plain"
+                )
+            else:
+                st.error("Failed to retrieve the protein sequence.")
+        elif data_source == 'Protein Sequence':
+            st.warning("FASTA download is not available for protein sequences provided by the user.")
 
 # Function to fetch the protein sequence in FASTA format
-@st.cache
+@st.cache_data
 def fetch_fasta(uniprot_id):
     url = f"https://www.uniprot.org/uniprot/{uniprot_id}.fasta"
     response = requests.get(url)
@@ -57,6 +59,7 @@ def fetch_fasta(uniprot_id):
         return response.text.encode('utf-8')  # Encode as bytes for download
     else:
         return None
+
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -96,7 +99,8 @@ def fetch_protein_data(uniprot_id):
     else:
         st.error("Failed to retrieve data.")
         return None
-    # Display protein characteristics
+
+# Display protein characteristics
 def display_protein_info(data):
     st.subheader("Protein Characteristics")
     st.write("Description:", data["description"])
@@ -144,25 +148,31 @@ def fetch_string_ppi(uniprot_id, min_score=700):
         return None
 
 # Analyze a protein sequence by calculating molecular weight and alignment
-def analyze_protein_sequence(protein_id, sequence):
-    fasta_sequence = fetch_fasta(protein_id)
-    if fasta_sequence:
-        seq1 = Seq(fasta_sequence.decode("utf-8").split('\n', 1)[1].replace('\n', ''))
-        seq2 = Seq(sequence)
-        st.write("Molecular Weight: {:.2f} Da".format(molecular_weight(seq2, seq_type='protein')))
-        align_sequences(seq1, seq2) 
+def analyze_protein_sequence(sequence):
+    matched_uniprot_id = reverse_search_uniprot(sequence)
+    if matched_uniprot_id:
+        # Fetch and display data using UniProt ID
+        protein_data = fetch_protein_data(matched_uniprot_id)
+        if protein_data:
+            display_protein_info(protein_data)
+            display_ppi_network(matched_uniprot_id)
     else:
-        st.error("Failed to fetch protein sequence.")
+        st.error("No UniProt ID found for the provided protein sequence.")
 
-# Align two sequences and show the alignment
-def align_sequences(seq1, seq2):
-    alignments = pairwise2.align.globalxx(seq1, seq2)
-    if alignments:
-        alignment_text = pairwise2.format_alignment(*alignments[0])
-        st.text("Alignment:")
-        st.text(alignment_text)
+# Lookup table mapping example protein sequences to UniProt IDs
+sequence_to_uniprot = {
+    "MSTHDTSLKTTEEVAFQIILLCQFGVGTFANVFLFVYNFSPISTGSKQRPRQVILRHMAVANALTLFLTIFPNNMMTFAPIIPQTDLKCKLEFFTRLVARSTNLCSTCVLSIHQFVTLVPVNSGKGILRASVTNMASYSCYSCWFFSVLNNIYIPIKVTGPQLTDNNNNSKSKLFCSTSDFSVGIVFLRFAHDATFMSIMVWTSVSMVLLLHRHCQRMQYIFTLNQDPRGQAETTATHTILMLVVTFVGFYLLSLICIIFYTYFIYSHHSLRHCNDILVSGFPTISPLLLTFRDPKGPCSVFFNC_": "P04637",
+    # Add more mappings as needed
+}
+
+# Function to perform a reverse search to find the UniProt ID based on the protein sequence
+def reverse_search_uniprot(sequence):
+    matched = difflib.get_close_matches(sequence, sequence_to_uniprot.keys(), n=1)
+    if matched:
+        return sequence_to_uniprot[matched[0]]
     else:
-        st.write("No alignment found.")
+        return None
+
 
 if __name__ == "__main__":
     main()
