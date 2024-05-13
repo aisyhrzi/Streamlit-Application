@@ -19,40 +19,41 @@ def set_custom_styles():
         <style>
             /* Add custom styles here */
             .stApp {
-                background-color: #f0f2f6;
+                background-color: #000000;
+                color: #FFC0CB;
             }
             .stTextArea, .stTextInput, .stSelectbox, .stButton {
                 border-radius: 10px;
                 box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
             }
             .stButton button {
-                background-color: #6d7fcc;
-                color: white;
+                background-color: #FF69B4;
+                color: black;
                 font-weight: bold;
                 border-radius: 10px;
             }
             .stButton button:hover {
-                background-color: #5c6eb9;
+                background-color: #FF1493;
             }
             .stTitle {
-                color: #2e3f64;
+                color: #FF69B4;
                 font-size: 36px;
                 font-weight: bold;
                 margin-bottom: 20px;
             }
             .stHeader {
-                color: #2e3f64;
+                color: #FF69B4;
                 font-size: 24px;
                 font-weight: bold;
                 margin-top: 20px;
                 margin-bottom: 10px;
             }
             .stText {
-                color: #2e3f64;
+                color: #FFC0CB;
                 font-size: 18px;
             }
             .stProgressBar div {
-                background-color: #6d7fcc;
+                background-color: #FF69B4;
             }
             .stPlotlyChart {
                 margin-top: 20px;
@@ -157,7 +158,7 @@ def display_ppi_network(uniprot_id):
 
         pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
         plt.figure(figsize=(10, 10))
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        nx.draw(G, pos, with_labels=True, node_color='#FF69B4', edge_color='#FF69B4', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
         st.pyplot(plt.gcf())
         plt.clf()
     else:
