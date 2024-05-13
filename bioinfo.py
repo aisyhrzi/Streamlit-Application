@@ -24,22 +24,35 @@ st.markdown(
         padding-left: 2rem;
         padding-bottom: 2rem;
     }
-    .title {
-        color: #FF69B4;
-        text-align: center;
-    }
-    .button {
-        background-color: #FF69B4;
-        color: white;
-        font-weight: bold;
-        border-radius: 5px;
-        padding: 0.5rem 1rem;
-        margin-top: 1rem;
-    }
     </style>
     """,
     unsafe_allow_html=True
 )
+
+def main():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
+    st.title("Protein Data Analysis App")
+    
+    st.write("## Choose Data Source")
+    data_source = st.radio("Select Data Source", ('UniProt ID', 'Protein Sequence'))
+
+    if data_source == 'UniProt ID':
+        protein_id = st.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
+        analyze_button = st.button("Analyze Protein", key="analyze_uniprot")
+        if analyze_button:
+            show_progress_bar()
+            protein_data = fetch_protein_data(protein_id)
+            if protein_data:
+                display_protein_info(protein_data)
+                display_ppi_network(protein_id)
+    elif data_source == 'Protein Sequence':
+         sequence_input = st.text_area("Enter Protein Sequence", value="")
+         analyze_button = st.button("Analyze Sequence", key="analyze_sequence")
+         if analyze_button and sequence_input:
+            show_progress_bar()
+            analyze_protein_sequence(sequence_input)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -95,26 +108,22 @@ def display_protein_info(data):
 # Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
     st.subheader("Protein-Protein Interaction Network")
-    try:
-        ppi_data = fetch_string_ppi(uniprot_id)
-        if ppi_data:
-            G = nx.Graph()
-            for interaction in ppi_data:
-                protein1 = interaction["preferredName_A"]
-                protein2 = interaction["preferredName_B"]
-                score = interaction["score"]
-                G.add_edge(protein1, protein2, weight=score)
+    ppi_data = fetch_string_ppi(uniprot_id)
+    if ppi_data:
+        G = nx.Graph()
+        for interaction in ppi_data:
+            protein1 = interaction["preferredName_A"]
+            protein2 = interaction["preferredName_B"]
+            score = interaction["score"]
+            G.add_edge(protein1, protein2, weight=score)
 
-            plt.figure(figsize=(10, 10))
-            pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
-            nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF69B4',
-                    node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
-            st.pyplot(plt.gcf())
-            plt.clf()
-        else:
-            st.write("No interaction data available.")
-    except Exception as e:
-        st.error("Error displaying the Protein-Protein Interaction Network: {}".format(str(e)))
+        pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
+        plt.figure(figsize=(10, 10))
+        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        st.pyplot(plt.gcf())
+        plt.clf()
+    else:
+        st.write("No interaction data available.")
 
 # Function to fetch protein-protein interaction data from STRING DB
 def fetch_string_ppi(uniprot_id, min_score=700):
@@ -144,10 +153,12 @@ def analyze_protein_sequence(sequence_input):
             return
         protein_sequence = str(records[0].seq)
         header = records[0].description
+        print("Sequence Header:", header)  # Add this line to check the sequence header
         # Extract UniProt ID using regular expression
         match = re.search(r"sp\|([A-Za-z0-9]+)-?\d*\|", header)
         if match:
             uniprot_id = match.group(1)
+            print("UniProt ID:", uniprot_id)  # Add this line to check the extracted UniProt ID
         else:
             st.error("UniProt ID not found in the protein sequence header.")
             return
@@ -174,10 +185,9 @@ def analyze_protein_sequence(sequence_input):
             score = interaction["score"]
             G.add_edge(protein1, protein2, weight=score)
 
-        plt.figure(figsize=(10, 10))
         pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF69B4',
-                node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
+        plt.figure(figsize=(10, 10))
+        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
         st.pyplot(plt.gcf())
         plt.clf()
     else:
@@ -185,4 +195,3 @@ def analyze_protein_sequence(sequence_input):
 
 if __name__ == "__main__":
     main()
-
