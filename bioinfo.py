@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import time
 import io
+import re
 import difflib
 import networkx as nx
 from Bio import SeqIO
@@ -10,9 +11,26 @@ from Bio.SeqUtils import molecular_weight
 from xml.etree import ElementTree as ET
 
 # Streamlit Page Config
-st.set_page_config(page_title="Protein Data Analysis", layout="centered")
+st.set_page_config(page_title="Protein Data Analysis", layout="wide")
+
+# Set background color and page width
+st.markdown(
+    """
+    <style>
+    .main-container {
+        background-color: #f0f2f6;
+        padding-top: 2rem;
+        padding-right: 2rem;
+        padding-left: 2rem;
+        padding-bottom: 2rem;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 def main():
+    st.markdown('<div class="main-container">', unsafe_allow_html=True)
     st.title("Protein Data Analysis App")
     
     st.write("## Choose Data Source")
@@ -20,7 +38,7 @@ def main():
 
     if data_source == 'UniProt ID':
         protein_id = st.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
-        analyze_button = st.button("Analyze Protein")
+        analyze_button = st.button("Analyze Protein", key="analyze_uniprot")
         if analyze_button:
             show_progress_bar()
             protein_data = fetch_protein_data(protein_id)
@@ -29,10 +47,12 @@ def main():
                 display_ppi_network(protein_id)
     elif data_source == 'Protein Sequence':
          sequence_input = st.text_area("Enter Protein Sequence", value="")
-         analyze_button = st.button("Analyze Sequence")
+         analyze_button = st.button("Analyze Sequence", key="analyze_sequence")
          if analyze_button and sequence_input:
             show_progress_bar()
             analyze_protein_sequence(sequence_input)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -132,6 +152,16 @@ def analyze_protein_sequence(sequence_input):
             st.error("Please provide a single protein sequence in FASTA format.")
             return
         protein_sequence = str(records[0].seq)
+        header = records[0].description
+        print("Sequence Header:", header)  # Add this line to check the sequence header
+        # Extract UniProt ID using regular expression
+        match = re.search(r"sp\|([A-Za-z0-9]+)-?\d*\|", header)
+        if match:
+            uniprot_id = match.group(1)
+            print("UniProt ID:", uniprot_id)  # Add this line to check the extracted UniProt ID
+        else:
+            st.error("UniProt ID not found in the protein sequence header.")
+            return
     except Exception as e:
         st.error("Error parsing the input sequence: {}".format(str(e)))
         return
@@ -146,7 +176,7 @@ def analyze_protein_sequence(sequence_input):
 
     # Display Protein-Protein Interaction Network
     st.subheader("Protein-Protein Interaction Network")
-    ppi_data = fetch_string_ppi(protein_sequence)
+    ppi_data = fetch_string_ppi(uniprot_id)
     if ppi_data:
         G = nx.Graph()
         for interaction in ppi_data:
@@ -162,6 +192,6 @@ def analyze_protein_sequence(sequence_input):
         plt.clf()
     else:
         st.write("No interaction data available.")
-        
+
 if __name__ == "__main__":
     main()
