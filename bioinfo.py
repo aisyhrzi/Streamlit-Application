@@ -164,5 +164,27 @@ def display_ppi_network(uniprot_id):
     else:
         st.write("No interaction data available")
 
+# Function to fetch UniProt ID for a given protein sequence
+def fetch_uniprot_id(protein_sequence):
+    #    # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
+    # For simplicity, let's just return a default UniProt ID for now
+    return "P04637"  # Default ID for TP53 human
+
+# Function to fetch protein-protein interaction data from STRING DB
+def fetch_string_ppi(uniprot_id, min_score=700):
+    url = "https://string-db.org/api/json/network"
+    params = {
+        "identifiers": uniprot_id,  # Protein identifier
+        "species": 9606,            # Species (9606 for Homo sapiens)
+        "required_score": min_score  # Minimum interaction score
+    }
+    response = requests.get(url, params=params)
+    if response.status_code == 200:
+        return response.json()
+    else:
+        st.error("Failed to retrieve data from STRING.")
+        return None
+
 if __name__ == "__main__":
     main()
+
