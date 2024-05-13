@@ -10,12 +10,65 @@ from Bio.SeqUtils import molecular_weight
 from xml.etree import ElementTree as ET
 
 # Streamlit Page Config
-st.set_page_config(page_title="Protein Data Analysis", layout="centered")
+st.set_page_config(page_title="Protein Data Analysis", layout="wide")
+
+# Function to set custom styles
+def set_custom_styles():
+    st.markdown(
+        """
+        <style>
+            /* Add custom styles here */
+            .stApp {
+                background-color: #f0f2f6;
+            }
+            .stTextArea, .stTextInput, .stSelectbox, .stButton {
+                border-radius: 10px;
+                box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.1);
+            }
+            .stButton button {
+                background-color: #6d7fcc;
+                color: white;
+                font-weight: bold;
+                border-radius: 10px;
+            }
+            .stButton button:hover {
+                background-color: #5c6eb9;
+            }
+            .stTitle {
+                color: #2e3f64;
+                font-size: 36px;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+            .stHeader {
+                color: #2e3f64;
+                font-size: 24px;
+                font-weight: bold;
+                margin-top: 20px;
+                margin-bottom: 10px;
+            }
+            .stText {
+                color: #2e3f64;
+                font-size: 18px;
+            }
+            .stProgressBar div {
+                background-color: #6d7fcc;
+            }
+            .stPlotlyChart {
+                margin-top: 20px;
+            }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+# Apply custom styles
+set_custom_styles()
 
 def main():
-    st.title("Protein Data Analysis App")
-    
-    st.write("## Choose Data Source")
+    st.title("🔬 Protein Data Analysis App")
+
+    st.write("## 🧬 Choose Data Source")
     data_source = st.radio("Select Data Source", ('UniProt ID', 'Protein Sequence'))
 
     if data_source == 'UniProt ID':
@@ -80,7 +133,7 @@ def fetch_protein_data(uniprot_id):
 
 # Display protein characteristics
 def display_protein_info(data):
-    st.subheader("Protein Characteristics")
+    st.subheader("🔍 Protein Characteristics")
     st.write("Description:", data["description"])
     st.write("Organism:", data["organism"])
     st.write("Protein Length:", len(data["sequence"]))
@@ -92,7 +145,7 @@ def display_protein_info(data):
 
 # Display the Protein-Protein Interaction Network
 def display_ppi_network(uniprot_id):
-    st.subheader("Protein-Protein Interaction Network")
+    st.subheader("🔗 Protein-Protein Interaction Network")
     ppi_data = fetch_string_ppi(uniprot_id)
     if ppi_data:
         G = nx.Graph()
@@ -108,28 +161,7 @@ def display_ppi_network(uniprot_id):
         st.pyplot(plt.gcf())
         plt.clf()
     else:
-        st.write("No interaction data available.")
-
-# Function to fetch protein-protein interaction data from STRING DB
-def fetch_string_ppi(uniprot_id, min_score=700):
-    url = "https://string-db.org/api/json/network"
-    params = {
-        "identifiers": uniprot_id,  # Protein identifier
-        "species": 9606,            # Species (9606 for Homo sapiens)
-        "required_score": min_score  # Minimum interaction score
-    }
-    response = requests.get(url, params=params)
-    if response.status_code == 200:
-        return response.json()
-    else:
-        st.error("Failed to retrieve data from STRING.")
-        return None
-
-# Function to fetch UniProt ID for a given protein sequence
-def fetch_uniprot_id(protein_sequence):
-    # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
-    # For simplicity, let's just return a default UniProt ID for now
-    return "P04637"  # Default ID for TP53 human
+        st.write("No interaction data available")
 
 if __name__ == "__main__":
     main()
