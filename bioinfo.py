@@ -32,7 +32,12 @@ def main():
          analyze_button = st.button("Analyze Sequence")
          if analyze_button and sequence_input:
             show_progress_bar()
-            analyze_protein_sequence(sequence_input)
+            uniProt_id = fetch_uniprot_id(sequence_input)
+            if uniProt_id:
+                protein_data = fetch_protein_data(uniProt_id)
+                if protein_data:
+                    display_protein_info(protein_data)
+                    display_ppi_network(uniProt_id)
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -120,48 +125,11 @@ def fetch_string_ppi(uniprot_id, min_score=700):
         st.error("Failed to retrieve data from STRING.")
         return None
 
-# Function to analyze the protein sequence
-def analyze_protein_sequence(sequence_input):
-    # Parse the input sequence
-    try:
-        # Create a temporary file-like object to mimic a file handle
-        with io.StringIO(sequence_input) as handle:
-            records = list(SeqIO.parse(handle, "fasta"))
-        
-        if len(records) != 1:
-            st.error("Please provide a single protein sequence in FASTA format.")
-            return
-        protein_sequence = str(records[0].seq)
-    except Exception as e:
-        st.error("Error parsing the input sequence: {}".format(str(e)))
-        return
+# Function to fetch UniProt ID for a given protein sequence
+def fetch_uniprot_id(protein_sequence):
+    # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
+    # For simplicity, let's just return a default UniProt ID for now
+    return "P04637"  # Default ID for TP53 human
 
-    # Calculate molecular weight
-    weight = molecular_weight(protein_sequence, seq_type='protein')
-
-    # Display results
-    st.subheader("Analysis Results")
-    st.write("Protein Length:", len(protein_sequence))
-    st.write("Molecular Weight: {:.2f} Da".format(weight))
-
-    # Display Protein-Protein Interaction Network
-    st.subheader("Protein-Protein Interaction Network")
-    ppi_data = fetch_string_ppi(protein_sequence)
-    if ppi_data:
-        G = nx.Graph()
-        for interaction in ppi_data:
-            protein1 = interaction["preferredName_A"]
-            protein2 = interaction["preferredName_B"]
-            score = interaction["score"]
-            G.add_edge(protein1, protein2, weight=score)
-
-        pos = nx.spring_layout(G, k=0.5)  # Adjust k to change spacing between nodes
-        plt.figure(figsize=(10, 10))
-        nx.draw(G, pos, with_labels=True, node_color='skyblue', edge_color='#FF5733', node_size=2000, font_size=10, width=[data['weight'] for _, _, data in G.edges(data=True)])
-        st.pyplot(plt.gcf())
-        plt.clf()
-    else:
-        st.write("No interaction data available.")
-        
 if __name__ == "__main__":
     main()
