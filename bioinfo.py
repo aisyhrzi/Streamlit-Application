@@ -53,7 +53,7 @@ def set_custom_styles():
                 font-size: 18px;
             }
             .stProgressBar div {
-                background-color: #FF69B4;
+                background-color: #FF69B4 !important;
             }
             .stPlotlyChart {
                 margin-top: 20px;
@@ -166,7 +166,7 @@ def display_ppi_network(uniprot_id):
 
 # Function to fetch UniProt ID for a given protein sequence
 def fetch_uniprot_id(protein_sequence):
-    #    # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
+    # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
     # For simplicity, let's just return a default UniProt ID for now
     return "P04637"  # Default ID for TP53 human
 
