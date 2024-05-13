@@ -38,10 +38,6 @@ def main():
                 if protein_data:
                     display_protein_info(protein_data)
                     display_ppi_network(uniProt_id)
-                    
-    # Add download button for FASTA formatted protein sequence
-    if 'fasta_sequence' in st.session_state:
-        st.download_button("Download Protein Sequence (FASTA)", st.session_state['fasta_sequence'], file_name="protein_sequence.fasta")
 
 # Function to simulate a progress bar
 def show_progress_bar():
@@ -68,10 +64,6 @@ def fetch_protein_data(uniprot_id):
         subcellular_location = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="subcellular location"]/{http://uniprot.org/uniprot}location')
         pathway = root.findtext('.//{http://uniprot.org/uniprot}dbReference[@type="Reactome"]')
         disease = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="disease"]/{http://uniprot.org/uniprot}text')
-
-        # Prepare FASTA formatted protein sequence without header line
-        fasta_sequence = f"{sequence}"
-        st.session_state['fasta_sequence'] = fasta_sequence
 
         return {
             "description": description,
