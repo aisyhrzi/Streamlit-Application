@@ -20,7 +20,6 @@ def main():
 
     if data_source == 'UniProt ID':
         protein_id = st.text_input("Enter UniProt ID", value="P04637")  # Default ID for TP53 human
-        download_fasta = st.checkbox("Download FASTA sequence")
         analyze_button = st.button("Analyze Protein")
         if analyze_button:
             show_progress_bar()
@@ -28,16 +27,10 @@ def main():
             if protein_data:
                 display_protein_info(protein_data)
                 display_ppi_network(protein_id)
-        if download_fasta:
-            fasta_sequence = fetch_fasta_sequence(protein_id)
-            if fasta_sequence:
-                st.subheader("Download FASTA Sequence")
-                st.write(f"Download the FASTA sequence for {protein_id} [here](data:text/plain;base64,{fasta_sequence})")
-
     elif data_source == 'Protein Sequence':
-        sequence_input = st.text_area("Enter Protein Sequence", value="")
-        analyze_button = st.button("Analyze Sequence")
-        if analyze_button and sequence_input:
+         sequence_input = st.text_area("Enter Protein Sequence", value="")
+         analyze_button = st.button("Analyze Sequence")
+         if analyze_button and sequence_input:
             show_progress_bar()
             uniProt_id = fetch_uniprot_id(sequence_input)
             if uniProt_id:
@@ -132,29 +125,11 @@ def fetch_string_ppi(uniprot_id, min_score=700):
         st.error("Failed to retrieve data from STRING.")
         return None
 
-# Function to fetch FASTA sequence for a given UniProt ID
-def fetch_fasta_sequence(uniprot_id):
-    url = f"https://www.uniprot.org/uniprot/{uniprot_id}.fasta"
-    response = requests.get(url)
-    if response.status_code == 200:
-        return response.content.decode("utf-8")
-    else:
-        st.error("Failed to retrieve FASTA sequence.")
-        return None
-
+# Function to fetch UniProt ID for a given protein sequence
 def fetch_uniprot_id(protein_sequence):
     # Perform BLAST search or use any other method to obtain UniProt ID for the sequence
-    # For demonstration purposes, let's assume a hypothetical UniProt ID mapping
-    # In practice, you might use BLAST or other sequence similarity search tools
-    sequence_mapping = {
-        "MGLSDGEWQLVLNVWGKVEADIPGHGQEVLIRLFKGHPETLEKFDKFKHLKSEDEMKASEDLKKAGVTVLTALGAILKKKGHHEAELKPLAQSHATKHKIPVKYLEFISEAIIHVLHSRHPGDFGADAQGAMTKALELFRNDIAAKYKELGFQG": "P04439"
-    }
-    if protein_sequence in sequence_mapping:
-        return sequence_mapping[protein_sequence]
-    else:
-        st.error("Failed to map the provided protein sequence to a UniProt ID.")
-        return None
+    # For simplicity, let's just return a default UniProt ID for now
+    return "P04637"  # Default ID for TP53 human
 
 if __name__ == "__main__":
     main()
-
