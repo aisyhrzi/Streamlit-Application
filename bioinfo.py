@@ -69,8 +69,8 @@ def fetch_protein_data(uniprot_id):
         pathway = root.findtext('.//{http://uniprot.org/uniprot}dbReference[@type="Reactome"]')
         disease = root.findtext('.//{http://uniprot.org/uniprot}comment[@type="disease"]/{http://uniprot.org/uniprot}text')
 
-        # Prepare FASTA formatted protein sequence
-        fasta_sequence = f">{uniprot_id}|{description}\n{sequence}"
+        # Prepare FASTA formatted protein sequence without header line
+        fasta_sequence = f"{sequence}"
         st.session_state['fasta_sequence'] = fasta_sequence
 
         return {
